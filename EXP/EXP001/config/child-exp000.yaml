@@ -1,0 +1,58 @@
+# EXP001 - child-exp000: LightGBM Baseline
+
+# Model Configuration
+model:
+  type: "lightgbm"
+  params:
+    num_leaves: 100
+    learning_rate: 0.05
+    feature_fraction: 0.8
+    bagging_fraction: 0.8
+    bagging_freq: 5
+    lambda_l1: 0.0
+    lambda_l2: 0.0
+    verbose: -1
+
+# Cross-Validation Configuration
+cv:
+  n_splits: 5
+  stratify: true
+  random_state: 42
+  method: "stratified_kfold"
+
+# Training Configuration
+training:
+  num_iterations: 500
+  early_stopping_rounds: 50
+  eval_metric: "auc"
+  verbose_eval: 20
+  verbose: true
+
+# Class Weight (不均衡対策)
+class_weight:
+  enabled: true
+  method: "balanced"
+
+# Target Configuration
+target:
+  name: "Churn"
+  type: "binary"
+
+# Data Configuration
+data:
+  train_path: "data/train.csv"
+  test_path: "data/test.csv"
+  random_seed: 42
+
+# Feature Configuration
+features:
+  use_categorical: true
+  use_numerical: true
+  encoding: "label"
+  scale: false  # LightGBM では不要
+
+# Output Configuration
+output:
+  save_oof: true
+  save_model: true
+  save_importance: true
