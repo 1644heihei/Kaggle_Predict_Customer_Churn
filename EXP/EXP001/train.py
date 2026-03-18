@@ -22,15 +22,15 @@ from sklearn.preprocessing import LabelEncoder
 
 def load_config(config_path):
     """設定ファイルを読込"""
-    with open(config_path, "r") as f:
+    with open(config_path, "r", encoding="utf-8") as f:
         config = yaml.safe_load(f)
     return config
 
 
 def load_data(config):
     """データを読込"""
-    train_df = pd.read_csv(config["data"]["train_path"])
-    test_df = pd.read_csv(config["data"]["test_path"])
+    train_df = pd.read_csv(config["data"]["train_path"], encoding="utf-8")
+    test_df = pd.read_csv(config["data"]["test_path"], encoding="utf-8")
 
     print(f"Train shape: {train_df.shape}")
     print(f"Test shape: {test_df.shape}")
@@ -44,29 +44,51 @@ def preprocess(train_df, test_df, config):
 
     target_name = config["target"]["name"]
 
-    # ターゲット抽出
-    y_train = train_df[target_name].values
+    # ターゲット抽出（Yes/No → 1/0 に変換）
+    y_train = (train_df[target_name] == "Yes").astype(int).values
 
-    # 特徴抽出（ターゲット除外）
-    X_train = train_df.drop(columns=[target_name])
-    X_test = test_df.copy()
+    # 特徴抽出（ターゲット＆IDを除外）
+    X_train = train_df.drop(columns=[target_name, "id"], errors="ignore")
+    X_test = (
+        test_df.drop(columns=["id"], errors="ignore")
+        if "id" in test_df.columns
+        else test_df.copy()
+    )
 
-    # カテゴリカル特徴のラベルエンコーディング（簡易版）
+    # test_dfのIDを保持（推論時に必要）
+    test_ids = (
+        test_df["id"].values if "id" in test_df.columns else np.arange(len(test_df))
+    )
+
+    # カテゴリカル特徴のラベルエンコーディング
     categorical_cols = X_train.select_dtypes(include="object").columns
+    le_dict = {}
     for col in categorical_cols:
         le = LabelEncoder()
         X_train[col] = le.fit_transform(X_train[col].astype(str))
-        X_test[col] = le.transform(X_test[col].astype(str))
+        le_dict[col] = le
+
+        # Test は Train の encoder を使う
+        try:
+            X_test[col] = le.transform(X_test[col].astype(str))
+        except ValueError:
+            # 未知のカテゴリがある場合は-1で埋める
+            test_values = X_test[col].astype(str)
+            test_encoded = np.where(
+                test_values.isin(le.classes_), le.transform(test_values), -1
+            )
+            X_test[col] = test_encoded
 
     # 欠損値埋める
-    X_train = X_train.fillna(X_train.mean(numeric_only=True))
-    X_test = X_test.fillna(X_test.mean(numeric_only=True))
+    train_mean = X_train.mean(numeric_only=True)
+    X_train = X_train.fillna(train_mean)
+    X_test = X_test.fillna(train_mean)
 
     print(f"X_train shape: {X_train.shape}")
     print(f"X_test shape: {X_test.shape}")
     print(f"Target distribution:\n{pd.Series(y_train).value_counts(normalize=True)}")
 
-    return X_train, y_train, X_test
+    return X_train, y_train, X_test, test_ids
 
 
 def train_cv(X_train, y_train, config):
@@ -213,7 +235,7 @@ def main():
     train_df, test_df = load_data(config)
 
     # 前処理
-    X_train, y_train, X_test = preprocess(train_df, test_df, config)
+    X_train, y_train, X_test, test_ids = preprocess(train_df, test_df, config)
 
     # CV 訓練
     oof_df, models, cv_auc, cv_logloss = train_cv(X_train, y_train, config)
