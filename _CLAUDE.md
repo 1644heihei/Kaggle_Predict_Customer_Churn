@@ -241,7 +241,100 @@ def test_train_infer_compatibility():
 
 ---
 
-## 📊 実験記録の方法
+## � パス管理のベストプラクティス（重要！）
+
+### ❌ よくある間違い：相対パスの使用
+
+```python
+# ❌ 危険：スクリプト実行ディレクトリに依存
+output_dir = Path(f"outputs/{child_exp_name}")
+output_dir.mkdir(parents=True, exist_ok=True)
+```
+
+**問題点**：
+- `python EXP/EXP001/train.py` → `EXP/EXP001/outputs/` に出力 ✓
+- `cd EXP/EXP001 && python train.py` → `EXP/EXP001/outputs/` に出力 ✓
+- `cd / && python EXP/EXP001/train.py` → ルートの `outputs/` に出力 ❌
+
+特に **Jupyter Notebook や execute_train.ipynb から実行** する場合、作業ディレクトリがプロジェクトルートになり、**EXP000 以外のファイルがルート outputs/ に出力される問題が発生**します。
+
+### ✅ 正しい実装：スクリプト基準パス
+
+```python
+# ✅ 推奨：スクリプトの場所を基準にする
+script_dir = Path(__file__).parent  # train.py のあるディレクトリ
+output_dir = script_dir / "outputs" / child_exp_name
+output_dir.mkdir(parents=True, exist_ok=True)
+```
+
+**利点**：
+- どのディレクトリから実行しても同じ場所に出力
+- Notebook からの実行でも正確に動作
+- EXP001/outputs/child-exp000/ に確実に保存
+
+### 設定ファイルのパスも同じ原則
+
+```python
+# ❌ 危険
+config = load_config("config/child-exp000.yaml")
+
+# ✅ 正解
+script_dir = Path(__file__).parent
+config_path = script_dir / "config" / "child-exp000.yaml"
+config = load_config(config_path)
+```
+
+### 実装チェックリスト
+
+```python
+from pathlib import Path
+
+def save_results(oof_df, test_predictions, cv_auc, cv_logloss, 
+                 config, config_path, child_exp_name):
+    """結果を保存"""
+    
+    # ✅ スクリプト基準のパスを使用
+    script_dir = Path(__file__).parent
+    output_dir = script_dir / "outputs" / child_exp_name
+    output_dir.mkdir(parents=True, exist_ok=True)
+    
+    # ✅ ファイル保存
+    oof_df.to_csv(output_dir / "oof_predictions.csv", index=False)
+    
+    # ✅ 結果保存
+    results = {
+        "cv_auc": float(cv_auc),
+        "cv_logloss": float(cv_logloss),
+        "n_folds": config["cv"]["n_splits"],
+    }
+    with open(output_dir / "results.json", "w", encoding="utf-8") as f:
+        json.dump(results, f, indent=2, ensure_ascii=False)
+    
+    # ✅ テスト予測を保存
+    test_pred_df = pd.DataFrame({"prediction": test_predictions})
+    test_pred_df.to_csv(output_dir / "test_predictions.csv", index=False)
+    
+    # ✅ 設定ファイルをコピー
+    import shutil
+    shutil.copy(config_path, output_dir / "config.yaml")
+    
+    print(f"✓ Results saved to {output_dir}")
+```
+
+### トラブルシューティング
+
+**問題**：ファイルが `EXP/EXP002/outputs/` ではなくルートの `outputs/` に出力される
+
+**原因**：相対パス使用 + execute_train.ipynb からの実行
+
+**解決策**：
+1. `Path(__file__).parent` を使用（上記コード参照）
+2. 確認：`EXP/EXP002/outputs/child-exp000/` に結果がある
+3. ルートの `outputs/child-exp000/` は削除可
+
+---
+
+## �📊 実験記録の方法
 
 実験完了後、以下の情報を **EXP/EXP_SUMMARY.md** に記入：
 
@@ -329,4 +422,4 @@ A: Boosting tree = yes。Linear model = no。Neural Net = yes。
 
 ---
 
-**最終更新**：2026-03-18
+**最終更新**：2026-03-24

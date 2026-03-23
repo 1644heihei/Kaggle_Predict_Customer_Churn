@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""提出用CSV生成スクリプト"""
+"""提出用CSV生成スクリプト（EXP003のみ）"""
 
 import pandas as pd
 import numpy as np
@@ -7,34 +7,26 @@ import numpy as np
 # テストデータのIDを読込
 test_df = pd.read_csv("data/test.csv", encoding="utf-8")
 
-# EXP002 の予測を読込
-test_pred_exp002 = pd.read_csv("outputs/child-exp000/test_predictions.csv")
-
-# EXP001 の予測を読込（ある場合）
+# EXP003（XGBoost + Feature Engineering）の予測を読込
 try:
-    test_pred_exp001 = pd.read_csv(
-        "EXP/EXP001/outputs/child-exp000/test_predictions.csv"
-    )
-    print("✓ EXP001 predictions loaded")
-    has_exp001 = True
+    test_pred_exp003_path1 = "EXP/EXP003/outputs/child-exp000/test_predictions.csv"
+    test_pred_exp003_path2 = "outputs/child-exp000/test_predictions.csv"
+    try:
+        test_pred_exp003 = pd.read_csv(test_pred_exp003_path1)
+        print("✓ EXP003 predictions loaded from EXP/EXP003/outputs/")
+    except FileNotFoundError:
+        test_pred_exp003 = pd.read_csv(test_pred_exp003_path2)
+        print("✓ EXP003 predictions loaded from outputs/")
 except FileNotFoundError:
-    print("⚠ EXP001 predictions not found (will use EXP002 only)")
-    has_exp001 = False
+    print("✗ EXP003 predictions not found!")
+    exit(1)
 
-print(f"✓ EXP002 predictions loaded: {test_pred_exp002.shape}")
 print(f"✓ Test IDs loaded: {len(test_df)}")
 
-# アンサンブル（平均）
-if has_exp001 and len(test_pred_exp001) == len(test_pred_exp002):
-    # EXP001 と EXP002 の平均
-    ensemble_pred = (
-        test_pred_exp001["prediction"].values + test_pred_exp002["prediction"].values
-    ) / 2
-    print(f"✓ Ensemble: (EXP001 + EXP002) / 2")
-else:
-    # EXP002 のみ使用
-    ensemble_pred = test_pred_exp002["prediction"].values
-    print(f"✓ Using EXP002 predictions only")
+# EXP003 の予測を使用
+ensemble_pred = test_pred_exp003["prediction"].values
+
+print(f"✓ Using EXP003 predictions only (CV AUC: 0.9159)")
 
 # 提出用 CSV を作成
 submission_df = pd.DataFrame({"id": test_df["id"].values, "Churn": ensemble_pred})

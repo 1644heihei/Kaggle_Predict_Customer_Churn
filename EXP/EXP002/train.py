@@ -295,7 +295,9 @@ def save_results(
 ):
     """結果を保存"""
 
-    output_dir = Path(f"outputs/{child_exp_name}")
+    # スクリプトのディレクトリを基準にする（実行ディレクトリに依存しない）
+    script_dir = Path(__file__).parent
+    output_dir = script_dir / "outputs" / child_exp_name
     output_dir.mkdir(parents=True, exist_ok=True)
 
     # OOF 予測を保存

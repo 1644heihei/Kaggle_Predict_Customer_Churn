@@ -52,6 +52,7 @@ EXP/
 **train.py**:
 - [ ] config から全パラメータ読込
 - [ ] outputs/{child-exp}/に config.yaml, oof_predictions.csv, results.json を出力
+  - **⚠️ 重要**: `Path(__file__).parent / "outputs"` を使用（相対パスは NG）
 - [ ] フォールド分割は層化K-Fold
 - [ ] Random seed 固定
 
@@ -92,6 +93,6 @@ target:
 
 ---
 
-**詳細は _CLAUDE.md を参照**
+**詳細は _CLAUDE.md を参照（特に「パス管理のベストプラクティス」セクション）**
 
-**最終更新**: 2026-03-18
+**最終更新**: 2026-03-24

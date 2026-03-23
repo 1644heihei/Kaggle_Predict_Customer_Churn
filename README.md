@@ -75,8 +75,25 @@
 1. [EXP/EXP_SUMMARY.md](EXP/EXP_SUMMARY.md) で過去の結果と失敗を確認
 2. `_CLAUDE.md` のガードレールを参照して避けるべきパターンを把握
 3. 新EXPまたはchild-expを立案
-4. `execute_train.ipynb` で訓練実行
+4. `execute_train.ipynb` で訓練実行（⚠️ **パス管理に注意** - 下記参照）
 5. 結果を EXP_SUMMARY.md に記録
+
+### ⚠️ パス管理：重要な注意事項
+
+実験スクリプト作成時、**相対パスではなくスクリプト基準のパスを使用してください**：
+
+```python
+# ❌ 間違い：実行ディレクトリに依存
+output_dir = Path(f"outputs/{child_exp_name}")
+
+# ✅ 正解：スクリプトの場所を基準
+script_dir = Path(__file__).parent
+output_dir = script_dir / "outputs" / child_exp_name
+```
+
+**理由**：`execute_train.ipynb` からの実行時、作業ディレクトリがプロジェクトルートになるため、相対パスを使用すると `EXP/EXP002/outputs/` ではなくルートの `outputs/` に出力されてしまいます。
+
+詳細は _CLAUDE.md の「パス管理のベストプラクティス」セクションを参照してください。
 
 ## AIエージェント向け指示
 
@@ -120,4 +137,4 @@ python scripts/create_exp.py --exp_num 2 --name "New Experiment"
 Kaggle Competition用
 
 ## 最終更新
-2026-03-18
+2026-03-24

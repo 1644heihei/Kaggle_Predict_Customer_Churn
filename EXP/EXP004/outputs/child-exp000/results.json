@@ -1,0 +1,29 @@
+{
+  "experiment": "EXP004",
+  "model": "XGBoost + Optuna",
+  "cv_auc_mean": 0.9164240291294711,
+  "cv_auc_std": 0.0009292768849782571,
+  "cv_logloss_mean": 0.6915467623000648,
+  "cv_logloss_std": 0.00036052412143024474,
+  "cv_folds": 5,
+  "best_hyperparameters": {
+    "objective": "binary:logistic",
+    "eval_metric": "logloss",
+    "tree_method": "gpu_hist",
+    "device": "cuda",
+    "random_state": 42,
+    "max_depth": 5,
+    "learning_rate": 0.08391256138300479,
+    "subsample": 0.7687271913806842,
+    "colsample_bytree": 0.6510996480755591,
+    "min_child_weight": 4,
+    "gamma": 0.12516038229687187,
+    "reg_alpha": 0.5225195689090203,
+    "reg_lambda": 0.6928752029230363
+  },
+  "num_features": 24,
+  "num_samples": 594194,
+  "optuna_n_trials": 100,
+  "optuna_best_trial": 84,
+  "optuna_best_value": 0.9164240291294711
+}

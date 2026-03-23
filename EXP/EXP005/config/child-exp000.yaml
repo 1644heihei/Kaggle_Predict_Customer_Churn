@@ -1,0 +1,48 @@
+# EXP005: CatBoost + Feature Engineering
+# 目的: CatBoostで異なるモデル実装 → モデル多様性確保＆アンサンブル向け
+
+data:
+  train_path: "data/train.csv"
+  test_path: "data/test.csv"
+
+target:
+  name: "Churn"
+
+cv:
+  n_splits: 5
+  random_state: 42
+  shuffle: true
+
+model:
+  name: "catboost"
+  params:
+    loss_function: "Logloss"
+    eval_metric: "AUC"
+    iterations: 500
+    learning_rate: 0.05
+    depth: 6
+    l2_leaf_reg: 3.0
+    bootstrap_type: "Poisson"
+    random_state: 42
+    verbose: false
+    task_type: "GPU"           # GPU活用
+    devices: "0"               # GPU ID
+
+training:
+  early_stopping_rounds: 50
+  verbose_eval: 20
+
+class_weight:
+  enabled: true
+  method: "balanced"
+
+feature_engineering:
+  enabled: true
+  interactions:
+    - ["MonthlyCharges", "tenure"]
+    - ["TotalCharges", "tenure"]
+  count_services: true
+  group_features: true
+
+# 注記: CatBoostはカテゴリ変数を自動処理するため、エンコーディングが簡略化される
+# EXP003/004（XGBoost）との組み合わせで多様性確保

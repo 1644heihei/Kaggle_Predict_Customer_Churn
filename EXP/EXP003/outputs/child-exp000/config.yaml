@@ -1,0 +1,50 @@
+# EXP003: XGBoost + Feature Engineering
+# 目的: EXP002の特徴量をXGBoostモデルで試す → アンサンブル用の多様性確保
+
+data:
+  train_path: "data/train.csv"
+  test_path: "data/test.csv"
+
+target:
+  name: "Churn"
+
+cv:
+  n_splits: 5
+  random_state: 42
+  shuffle: true
+
+model:
+  name: "xgboost"
+  params:
+    objective: "binary:logistic"
+    eval_metric: "logloss"
+    max_depth: 6
+    learning_rate: 0.1
+    subsample: 0.8
+    colsample_bytree: 0.8
+    min_child_weight: 1
+    gamma: 0
+    reg_alpha: 0
+    reg_lambda: 1
+    tree_method: "hist"
+    device: "cpu"
+
+training:
+  num_iterations: 500
+  early_stopping_rounds: 50
+  verbose_eval: 20
+
+class_weight:
+  enabled: true
+  method: "balanced"
+
+feature_engineering:
+  enabled: true
+  interactions:
+    - ["MonthlyCharges", "tenure"]
+    - ["TotalCharges", "tenure"]
+  count_services: true
+  group_features: true
+
+# 注記: LightGBMと同じ特徴量を使用し、異なるモデルで評価
+# アンサンブル用: (EXP001 + EXP002 + EXP003) / 3
