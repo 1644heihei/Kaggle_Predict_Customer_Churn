@@ -8,35 +8,88 @@
 
 | EXP | Type | Focus | Best CV | LB | Status | Notes |
 |-----|------|-------|---------|-----|--------|-------|
-| EXP001 | LightGBM | Baseline | TBD | TBD | Not started | 初期実装 |
+| EXP001 | LightGBM | Baseline | 0.9134 | TBD | ✅ Completed | デモ版（50K, 3-fold） |
+| EXP002 | LightGBM | Feature Eng | 0.9126 | TBD | ✅ Completed | 相互作用項＋Service Count |
 
 ---
 
 ## EXP001 - Baseline LightGBM
 
-**Status**: 未実装
+**Status**: ✅ 完了（デモ版）
 
-**説明**: 顧客離脱の LightGBM baseline。標準的なデータ前処理と CV フロー。
+**説明**: 50K サンプル、3-fold CV での初期 baseline。標準的なデータ前処理と CV フロー。
 
-**Child Experiments計画**:
-- child-exp000：デフォルト設定（num_leaves=100, lr=0.05）
-- child-exp001：調整版（微調整）
-- child-exp002：調整版（別方針）
+**実装内容**:
+- 層化 K-Fold（3-fold）
+- LightGBM with sigmoid output （raw score → expit 変換）
+- class_weight = balanced（4.3→1 比率）
+- Early stopping（round=50）
 
-**期待される改善**:
-- LightGBM は表型データに強い
-- class weight で不均衡に対応
-- CV-LB gap を観察
+**結果**:
+- CV AUC: **0.9134**
+- CV Logloss: **0.6926**
+- テスト予測生成済み
 
-**失敗しやすいポイント**:
-- フォールド漏洩（datetime分割が必要な場合）
-- クラス不均衡への対応不足
-- ハイパラ過最適化（OOFでオーバーチューニング）
+**Top 5 重要度特徴**:
+1. PaymentMethod (547)
+2. tenure (384)
+3. MonthlyCharges (269)
+4. TotalCharges (201)
+5. PaperlessBilling (178)
 
-**次のステップ**:
-- EXP001 の結果を確認 → 
-- EXP002で feature engineering 追加 →
-- EXP003でアンサンブル検討
+**次のステップ**: Feature Engineering で改善検討
+
+---
+
+## EXP002 - LightGBM + Feature Engineering
+
+**Status**: ✅ 完了（本格版）
+
+**説明**: フル 594K データ、5-fold CV での特徴量エンジニアリング版。
+
+**新しい特徴量**:
+1. **相互作用項** (✓ 有効):
+   - `MonthlyCharges × tenure`
+   - `TotalCharges × tenure`
+
+2. **Service Count**:
+   - 複数サービス契約数をカウント（9 サービス対象）
+
+3. **グループ化集計**:
+   - `Contract_AvgCharge`: Contract 別の平均月額料金
+   - `InternetService_AvgTenure`: InternetService 別の平均テニュア
+
+**実装内容**:
+- 層化 K-Fold（5-fold）
+- LightGBM with sigmoid output
+- class_weight = balanced（3.44→1 比率）
+- Early stopping（round=50）
+
+**結果**:
+- CV AUC: **0.9126**
+- CV Logloss: **0.7326**
+- **特徴量: 19 → 24 (+5 新規)**
+
+**Top 10 重要度特徴**:
+1. PaymentMethod (421.8)
+2. tenure (391.6)
+3. **TotalCharges** (297.8)
+4. **MonthlyCharges** (278.2)
+5. **MonthlyCharges_x_tenure** (254.4) ✅ **新規**
+6. PaperlessBilling (199.0)
+7. SeniorCitizen (189.2)
+8. MultipleLines (185.8)
+9. **TotalCharges_x_tenure** (179.8) ✅ **新規**
+10. Dependents (150.2)
+
+**分析**:
+- ✅ 相互作用項が Top 10 の 40% を占める（有効性確認）
+- ✅ Fold 間の安定性：0.9112 ～ 0.9140（良好）
+
+**考察**:
+- EXP001 は固定 50K でデモ版、EXP002 は本格版なので直接比較不可
+- 全体的に安定したスコア（CV差が最小）
+- 相互作用項の追加が効果的
 
 ---
 
