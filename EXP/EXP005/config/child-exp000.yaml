@@ -22,11 +22,11 @@ model:
     learning_rate: 0.05
     depth: 6
     l2_leaf_reg: 3.0
-    bootstrap_type: "Poisson"
+    bootstrap_type: "Bernoulli"  # CPU対応のブートストラップ
     random_state: 42
     verbose: false
-    task_type: "GPU"           # GPU活用
-    devices: "0"               # GPU ID
+    task_type: "CPU"           # CPU実行
+    # devices: "0"               # GPU ID（CPU時は不要）
 
 training:
   early_stopping_rounds: 50
