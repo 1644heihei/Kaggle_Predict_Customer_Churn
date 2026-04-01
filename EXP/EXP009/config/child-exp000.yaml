@@ -1,0 +1,39 @@
+# EXP009: PyTorch + ResNet型ニューラルネットワーク
+# 目的: タビュラーデータ向けの残差ブロック付きニューラルネット
+#       アンサンブルの多様性を増加させるため
+
+data:
+  train_path: "data/train.csv"
+  test_path: "data/test.csv"
+
+target:
+  name: "Churn"
+
+cv:
+  n_splits: 5
+  random_state: 42
+  shuffle: true
+
+model:
+  name: "pytorch_resnet"
+  hidden_dims: [256, 128, 64]
+  dropout_rate: 0.3
+  batch_norm: true
+  use_residual: true
+  
+training:
+  batch_size: 64
+  num_epochs: 100
+  early_stopping_patience: 20
+  learning_rate: 0.001
+  optimizer: "adam"
+  weight_decay: 0.00001
+  device: "cuda"  # "cuda" または "cpu"
+  
+feature_engineering:
+  enabled: true
+  interactions:
+    - ["MonthlyCharges", "tenure"]
+    - ["TotalCharges", "tenure"]
+  count_services: true
+  group_features: true
